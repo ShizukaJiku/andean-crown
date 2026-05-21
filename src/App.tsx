@@ -8,6 +8,8 @@ import { OperationsPage } from './pages/OperationsPage'
 import { OperationDetailPage } from './pages/OperationDetailPage'
 import { ProfilePage } from './pages/ProfilePage'
 import { StatusPage } from './pages/StatusPage'
+import { AuctionPage } from './pages/AuctionPage'
+import { AlertsPage } from './pages/AlertsPage'
 import { useAuthStore } from './store/auth.store'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -18,6 +20,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 function App() {
   return (
     <BrowserRouter>
+      <a href="#main-content" className="skip-link">Saltar al contenido principal</a>
       <div className="mobile-shell">
         <Routes>
           <Route path="/" element={<SplashPage />} />
@@ -46,6 +49,14 @@ function App() {
           <Route
             path="/status/:id"
             element={<ProtectedRoute><StatusPage /></ProtectedRoute>}
+          />
+          <Route
+            path="/auction"
+            element={<ProtectedRoute><AuctionPage /></ProtectedRoute>}
+          />
+          <Route
+            path="/alerts"
+            element={<ProtectedRoute><AlertsPage /></ProtectedRoute>}
           />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

@@ -7,15 +7,20 @@ import { cn } from '../../lib/cn'
 interface BankSelectorProps {
   selectedId: string | null
   onSelect: (id: string) => void
-  filterCurrency?: 'PEN' | 'USD'
+  filterCurrency?: 'PEN' | 'USD' | 'EUR'
+  /** When false (default), hide Fase 2 EUR accounts. Set to true on the EUR flow. */
+  includeFase2?: boolean
 }
 
-export function BankSelector({ selectedId, onSelect, filterCurrency }: BankSelectorProps) {
+const currencyLabel = (c: 'PEN' | 'USD' | 'EUR') =>
+  c === 'PEN' ? 'Soles' : c === 'USD' ? 'Dólares' : 'Euros'
+
+export function BankSelector({ selectedId, onSelect, filterCurrency, includeFase2 = false }: BankSelectorProps) {
   const [copiedId, setCopiedId] = useState<string | null>(null)
 
-  const accounts = filterCurrency
-    ? companyAccounts.filter((a) => a.currency === filterCurrency)
-    : companyAccounts
+  const accounts = companyAccounts
+    .filter((a) => (filterCurrency ? a.currency === filterCurrency : true))
+    .filter((a) => (a.phase === 'fase2' ? includeFase2 : true))
 
   const copyToClipboard = (text: string, id: string) => {
     navigator.clipboard.writeText(text).then(() => {
@@ -50,8 +55,15 @@ export function BankSelector({ selectedId, onSelect, filterCurrency }: BankSelec
                 {account.logo}
               </div>
               <div className="min-w-0">
-                <p className="font-semibold text-text text-sm">{account.bank}</p>
-                <p className="text-xs text-muted">{account.currency === 'PEN' ? 'Soles' : 'Dólares'} · Ahorros</p>
+                <div className="flex items-center gap-2">
+                  <p className="font-semibold text-text text-sm">{account.bank}</p>
+                  {account.phase === 'fase2' && (
+                    <span className="text-[10px] font-semibold uppercase tracking-wide bg-crown-gold/15 text-crown-gold-dim rounded px-1.5 py-0.5">
+                      Fase 2
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs text-muted">{currencyLabel(account.currency)} · Ahorros</p>
               </div>
             </div>
             <div
@@ -83,12 +95,15 @@ export function BankSelector({ selectedId, onSelect, filterCurrency }: BankSelec
                 </div>
                 <button
                   onClick={(e) => { e.stopPropagation(); copyToClipboard(account.cci, account.id) }}
-                  className="p-2 rounded-lg hover:bg-gray-100 transition-colors shrink-0"
+                  type="button"
+                  aria-label={`Copiar CCI del ${account.bank}`}
+                  className="tap-target rounded-lg hover:bg-gray-100 transition-colors shrink-0"
                 >
                   {copiedId === account.id
-                    ? <Check size={15} className="text-success" />
-                    : <Copy size={15} className="text-muted" />
+                    ? <Check size={16} className="text-success" aria-hidden="true" />
+                    : <Copy size={16} className="text-muted" aria-hidden="true" />
                   }
+                  {copiedId === account.id && <span className="sr-only">CCI copiado al portapapeles</span>}
                 </button>
               </div>
               <p className="text-xs text-muted">Titular: <span className="text-text font-medium">{account.holder}</span></p>

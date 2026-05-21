@@ -68,3 +68,57 @@ html {
 ::-webkit-scrollbar { width: 3px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 2px; }
+
+/* === A11y === */
+
+/* Focus visible (mantiene UI limpia con mouse, pero teclado-only ve dónde está) */
+:focus { outline: none; }
+:focus-visible {
+  outline: 2px solid var(--color-crown-gold);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* Skip link visible solo cuando recibe foco por teclado */
+.skip-link {
+  position: absolute;
+  top: -100px;
+  left: 12px;
+  background: var(--color-crown-navy);
+  color: #fff;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  z-index: 100;
+  transition: top 0.2s ease;
+}
+.skip-link:focus { top: 12px; }
+
+/* Touch targets mínimos 44px (WCAG 2.1 AA - 2.5.5) */
+.tap-target {
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Screen-reader only */
+.sr-only {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0, 0, 0, 0);
+  white-space: nowrap; border: 0;
+}
+
+/* Respetar la preferencia del sistema de reducir movimiento */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

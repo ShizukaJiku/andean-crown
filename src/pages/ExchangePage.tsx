@@ -171,9 +171,13 @@ export function ExchangePage() {
                   </div>
                 </div>
 
-                <div className="bg-warning-bg rounded-xl p-3">
-                  <p className="text-xs text-warning font-medium">
-                    ⏱ Tu operación estará lista en aproximadamente 15 minutos luego de confirmada
+                <div className="bg-gradient-to-br from-crown-navy/5 to-crown-gold/10 border border-crown-gold/30 rounded-xl p-3">
+                  <p className="text-xs font-semibold text-crown-navy mb-0.5">
+                    🛡 Garantía SLA de 15 minutos
+                  </p>
+                  <p className="text-xs text-text/80">
+                    Si tu abono no llega en 15 min desde la validación del voucher, te
+                    compensamos automáticamente con tasa preferencial en tu siguiente cambio.
                   </p>
                 </div>
 

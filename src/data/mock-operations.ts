@@ -34,11 +34,13 @@ export interface Operation {
 }
 
 const buildTimeline = (status: OperationStatus, base: Date): TimelineEvent[] => {
+  // Lenguaje humano: descripciones en primera persona del sistema hacia el cliente.
+  // Nielsen #2: match between system and the real world.
   const steps: Array<{ status: OperationStatus; label: string; description: string }> = [
-    { status: 'pendiente_pago', label: 'Pendiente de pago', description: 'Orden creada. Realiza tu transferencia.' },
-    { status: 'validando_voucher', label: 'Validando voucher', description: 'Verificando tu comprobante de pago.' },
-    { status: 'procesando', label: 'Procesando', description: 'Confirmamos tu pago. Procesando el abono.' },
-    { status: 'completado', label: 'Completado', description: 'El abono fue acreditado en tu cuenta.' },
+    { status: 'pendiente_pago',    label: 'Listo para tu pago',        description: 'Tu orden está creada. Realiza la transferencia desde tu app bancaria.' },
+    { status: 'validando_voucher', label: 'Revisando tu comprobante',  description: 'Estamos verificando que tu transferencia llegó correctamente.' },
+    { status: 'procesando',        label: 'Enviando tu dinero',        description: 'Confirmamos tu pago. Tu abono llega en menos de 15 minutos.' },
+    { status: 'completado',        label: '¡Tu dinero llegó!',         description: 'El abono fue acreditado en tu cuenta bancaria.' },
   ]
   const statusOrder = ['pendiente_pago', 'validando_voucher', 'procesando', 'completado']
   const currentIdx = statusOrder.indexOf(status)
@@ -120,7 +122,7 @@ export const mockOperations: Operation[] = [
     bank: 'BCP',
     createdAt: d(3),
     timeline: buildTimeline('validando_voucher', d(3)),
-    observationNote: 'El voucher adjunto no es legible. Por favor carga nuevamente la imagen.',
+    observationNote: 'No pudimos leer el comprobante. Toma una nueva foto con buena luz y vuelve a subirla; no te cobramos nada hasta que validemos.',
   },
   {
     id: 'op-005',

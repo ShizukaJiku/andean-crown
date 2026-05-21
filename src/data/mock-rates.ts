@@ -10,16 +10,24 @@ export const initialRate: ExchangeRate = {
   updatedAt: new Date(),
 }
 
+// FX-31: EUR rate (Fase 2 — multidivisa)
+export const initialRateEUR: ExchangeRate = {
+  buy: 4.020,
+  sell: 4.085,
+  updatedAt: new Date(),
+}
+
 // Company bank accounts for deposits (shown to client)
 export interface CompanyAccount {
   id: string
   bank: 'BCP' | 'BBVA' | 'Interbank' | 'Scotiabank'
-  currency: 'PEN' | 'USD'
+  currency: 'PEN' | 'USD' | 'EUR'
   accountNumber: string
   cci: string
   holder: string
   color: string
   logo: string
+  phase?: 'mvp' | 'fase2'  // FX-31: EUR accounts arrive in Fase 2
 }
 
 export const companyAccounts: CompanyAccount[] = [
@@ -62,5 +70,28 @@ export const companyAccounts: CompanyAccount[] = [
     holder: 'Andean Crown S.A.C.',
     color: '#EC111A',
     logo: 'SBK',
+  },
+  // FX-31 — Cuentas en Euros (Fase 2). Solo BCP y BBVA habilitan operaciones EUR en Perú.
+  {
+    id: 'ca-005',
+    bank: 'BCP',
+    currency: 'EUR',
+    accountNumber: '193-22334455-1-11',
+    cci: '00219300223344551110',
+    holder: 'Andean Crown S.A.C.',
+    color: '#003F8A',
+    logo: 'BCP',
+    phase: 'fase2',
+  },
+  {
+    id: 'ca-006',
+    bank: 'BBVA',
+    currency: 'EUR',
+    accountNumber: '0011-0188-7765432109',
+    cci: '01101880776543210900',
+    holder: 'Andean Crown S.A.C.',
+    color: '#004A97',
+    logo: 'BBVA',
+    phase: 'fase2',
   },
 ]

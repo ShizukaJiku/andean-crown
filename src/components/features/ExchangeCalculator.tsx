@@ -70,10 +70,13 @@ export function ExchangeCalculator({ onConfirm }: ExchangeCalculatorProps) {
             <span className="text-lg font-bold text-muted">{isBuy ? 'S/' : '$'}</span>
             <input
               type="number"
+              inputMode="decimal"
               placeholder="0.00"
               value={amountInput}
               onChange={(e) => handleAmountChange(e.target.value)}
-              className="flex-1 text-3xl font-bold text-text bg-transparent outline-none placeholder:text-gray-200 min-w-0"
+              aria-label={isBuy ? 'Monto a enviar en soles' : 'Monto a enviar en dólares'}
+              aria-invalid={touched && amount <= 0 ? 'true' : 'false'}
+              className="flex-1 text-3xl font-bold text-text bg-transparent outline-none placeholder:text-gray-400 min-w-0"
             />
             <span className="text-sm font-semibold bg-crown-navy/8 rounded-lg px-2.5 py-1 text-crown-navy">
               {isBuy ? 'PEN' : 'USD'}
@@ -84,9 +87,11 @@ export function ExchangeCalculator({ onConfirm }: ExchangeCalculatorProps) {
         {/* Toggle button */}
         <button
           onClick={handleToggleDirection}
-          className="absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-crown-gold rounded-full flex items-center justify-center shadow-md active:scale-90 transition-transform"
+          type="button"
+          aria-label={isBuy ? 'Cambiar a vender dólares' : 'Cambiar a comprar dólares'}
+          className="absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 z-10 w-11 h-11 bg-crown-gold rounded-full flex items-center justify-center shadow-md active:scale-90 transition-transform"
         >
-          <ArrowUpDown size={18} className="text-crown-navy" strokeWidth={2.5} />
+          <ArrowUpDown size={18} className="text-crown-navy" strokeWidth={2.5} aria-hidden="true" />
         </button>
 
         {/* Receive */}
@@ -95,13 +100,18 @@ export function ExchangeCalculator({ onConfirm }: ExchangeCalculatorProps) {
             {isBuy ? 'Recibes (Dólares)' : 'Recibes (Soles)'}
           </p>
           <div className="flex items-center gap-2">
-            <span className="text-lg font-bold text-muted">{isBuy ? '$' : 'S/'}</span>
-            <span className="flex-1 text-3xl font-bold text-crown-navy">
+            <span className="text-lg font-bold text-muted" aria-hidden="true">{isBuy ? '$' : 'S/'}</span>
+            <span
+              className="flex-1 text-3xl font-bold text-crown-navy"
+              aria-live="polite"
+              aria-atomic="true"
+              aria-label={`Recibirás ${touched && amount > 0 ? result.toFixed(2) : '0.00'} ${isBuy ? 'dólares' : 'soles'}`}
+            >
               {touched && amount > 0
                 ? isBuy
                   ? result.toFixed(2)
                   : result.toFixed(2)
-                : <span className="text-gray-200">0.00</span>
+                : <span className="text-gray-400" aria-hidden="true">0.00</span>
               }
             </span>
             <span className="text-sm font-semibold bg-crown-gold/15 rounded-lg px-2.5 py-1 text-crown-gold-dim">
@@ -114,6 +124,13 @@ export function ExchangeCalculator({ onConfirm }: ExchangeCalculatorProps) {
                 ? `${formatPEN(amount)} ÷ ${appliedRate.toFixed(3)} = ${formatUSD(result)}`
                 : `${formatUSD(amount)} × ${appliedRate.toFixed(3)} = ${formatPEN(result)}`
               }
+            </p>
+          )}
+
+          {/* Validación en vivo: monto mínimo (Nielsen #5 — Error prevention) */}
+          {touched && amount > 0 && amount < (isBuy ? 50 : 20) && (
+            <p className="text-xs text-warning mt-1.5" role="status" aria-live="polite">
+              Monto mínimo recomendado: {isBuy ? formatPEN(50) : formatUSD(20)}.
             </p>
           )}
         </div>
@@ -165,7 +182,7 @@ export function ExchangeCalculator({ onConfirm }: ExchangeCalculatorProps) {
       )}
 
       <p className="text-center text-xs text-muted">
-        Sin comisiones ocultas · Transferencia estimada ~15 min
+        Sin comisiones ocultas · <span className="text-crown-navy font-semibold">Garantía SLA 15 min</span>
       </p>
     </div>
   )

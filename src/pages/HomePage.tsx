@@ -4,6 +4,9 @@ import { motion } from 'framer-motion'
 import { BottomNav } from '../components/ui/BottomNav'
 import { ExchangeRateCard } from '../components/features/ExchangeRateCard'
 import { OperationCard } from '../components/features/OperationCard'
+import { InnovationBanner } from '../components/features/InnovationBanner'
+import { TransparencyCard } from '../components/features/TransparencyCard'
+import { TrustDashboard } from '../components/features/TrustDashboard'
 import { useAuthStore } from '../store/auth.store'
 import { useOperationsStore } from '../store/operations.store'
 import { useExchangeStore } from '../store/exchange.store'
@@ -34,9 +37,14 @@ export function HomePage() {
               <p className="text-white font-bold text-base">{firstName}</p>
             </div>
           </div>
-          <button className="relative w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center">
-            <Bell size={18} className="text-white" />
-            <span className="absolute top-2 right-2 w-2 h-2 bg-crown-gold rounded-full" />
+          <button
+            type="button"
+            onClick={() => navigate('/alerts')}
+            aria-label="Ver alertas de tipo de cambio"
+            className="relative w-11 h-11 bg-white/10 rounded-xl flex items-center justify-center"
+          >
+            <Bell size={18} className="text-white" aria-hidden="true" />
+            <span className="absolute top-2 right-2 w-2 h-2 bg-crown-gold rounded-full" aria-hidden="true" />
           </button>
         </div>
 
@@ -54,19 +62,30 @@ export function HomePage() {
       </div>
 
       {/* Floating rate card */}
-      <div className="px-4 -mt-4">
+      <main id="main-content" tabIndex={-1}>
+      <div className="px-4 -mt-4 space-y-3">
         <ExchangeRateCard />
+        <TransparencyCard />
+      </div>
+
+      {/* Trust dashboard: SLA real en vivo */}
+      <div className="px-4 mt-4">
+        <TrustDashboard />
       </div>
 
       {/* Quick actions */}
-      <div className="px-4 mt-5">
-        <p className="text-xs font-semibold text-muted uppercase tracking-wider mb-3">Operaciones rápidas</p>
+      <section aria-labelledby="quick-actions-title" className="px-4 mt-5">
+        <p id="quick-actions-title" className="text-xs font-semibold text-muted uppercase tracking-wider mb-3">
+          Operaciones rápidas
+        </p>
         <div className="grid grid-cols-2 gap-3">
           <button
             onClick={handleBuy}
-            className="bg-surface border border-border rounded-2xl p-4 text-left active:scale-[0.97] transition-transform"
+            type="button"
+            aria-label="Comprar dólares: envía soles, recibe dólares"
+            className="bg-surface border border-border rounded-2xl p-4 text-left active:scale-[0.97] transition-transform min-h-[44px]"
           >
-            <div className="w-10 h-10 bg-success-bg rounded-xl flex items-center justify-center mb-3">
+            <div className="w-10 h-10 bg-success-bg rounded-xl flex items-center justify-center mb-3" aria-hidden="true">
               <ArrowDownLeft size={20} className="text-success" />
             </div>
             <p className="font-bold text-text text-sm">Comprar USD</p>
@@ -74,40 +93,59 @@ export function HomePage() {
           </button>
           <button
             onClick={handleSell}
-            className="bg-surface border border-border rounded-2xl p-4 text-left active:scale-[0.97] transition-transform"
+            type="button"
+            aria-label="Vender dólares: envía dólares, recibe soles"
+            className="bg-surface border border-border rounded-2xl p-4 text-left active:scale-[0.97] transition-transform min-h-[44px]"
           >
-            <div className="w-10 h-10 bg-info-bg rounded-xl flex items-center justify-center mb-3">
+            <div className="w-10 h-10 bg-info-bg rounded-xl flex items-center justify-center mb-3" aria-hidden="true">
               <ArrowUpRight size={20} className="text-info" />
             </div>
             <p className="font-bold text-text text-sm">Vender USD</p>
             <p className="text-xs text-muted mt-0.5">Envía dólares, recibe soles</p>
           </button>
         </div>
-      </div>
+      </section>
+
+      {/* Diferenciadores: Garantía SLA, Subasta, EUR */}
+      <InnovationBanner />
 
       {/* Recent operations */}
-      <div className="px-4 mt-6 pb-28">
+      <section aria-labelledby="recent-ops-title" className="px-4 mt-6 pb-28">
         <div className="flex items-center justify-between mb-3">
-          <p className="text-xs font-semibold text-muted uppercase tracking-wider">Operaciones recientes</p>
-          <button onClick={() => navigate('/operations')} className="flex items-center gap-0.5 text-xs text-crown-gold-dim font-medium">
-            Ver todo <ChevronRight size={14} />
+          <p id="recent-ops-title" className="text-xs font-semibold text-muted uppercase tracking-wider">
+            Operaciones recientes
+          </p>
+          <button
+            onClick={() => navigate('/operations')}
+            type="button"
+            aria-label="Ver todas las operaciones"
+            className="flex items-center gap-0.5 text-xs text-crown-gold-dim font-medium min-h-[44px] px-2"
+          >
+            Ver todo <ChevronRight size={14} aria-hidden="true" />
           </button>
         </div>
         {recentOps.length > 0 ? (
-          <div className="flex flex-col gap-2">
+          <ul className="flex flex-col gap-2" aria-label="Lista de operaciones recientes">
             {recentOps.map((op) => (
-              <OperationCard key={op.id} operation={op} />
+              <li key={op.id}>
+                <OperationCard operation={op} />
+              </li>
             ))}
-          </div>
+          </ul>
         ) : (
           <div className="bg-surface border border-border rounded-2xl p-8 text-center">
             <p className="text-sm text-muted">Aún no tienes operaciones</p>
-            <button onClick={handleBuy} className="mt-3 text-sm font-semibold text-crown-gold-dim">
+            <button
+              onClick={handleBuy}
+              type="button"
+              className="mt-3 text-sm font-semibold text-crown-gold-dim min-h-[44px] px-3"
+            >
               Realizar primer cambio
             </button>
           </div>
         )}
-      </div>
+      </section>
+      </main>
 
       <BottomNav />
     </div>
