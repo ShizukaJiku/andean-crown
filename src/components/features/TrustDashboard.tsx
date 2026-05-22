@@ -34,7 +34,7 @@ export function TrustDashboard() {
       <div className="flex items-center gap-2 px-4 pt-4 pb-2">
         <ShieldCheck size={16} className="text-success" aria-hidden="true" />
         <p id="trust-dashboard-title" className="text-xs font-semibold text-text">
-          Cómo cumplimos hoy
+          Rendimiento de hoy
         </p>
         <span
           className="ml-auto flex items-center gap-1 text-[10px] text-muted"
@@ -69,8 +69,8 @@ export function TrustDashboard() {
 
       <div className="px-4 py-2.5 bg-success-bg/50 border-t border-success-bg">
         <p className="text-[11px] text-text leading-relaxed">
-          Más rápida hoy: <span className="font-semibold">{stats.fastestMinutes.toFixed(1)} min</span> ·
-          Si tu operación supera 15 min, te compensamos automáticamente.
+          Más rápida hoy: <span className="font-semibold">{stats.fastestMinutes.toFixed(1)} min</span>
+          {' · '}SLA objetivo: <span className="font-semibold">15 min</span>
         </p>
       </div>
     </section>

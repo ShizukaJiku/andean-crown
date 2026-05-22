@@ -20,7 +20,7 @@ export function StepIndicator({ steps, current }: StepIndicatorProps) {
                   'w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all',
                   done && 'bg-crown-gold text-crown-navy',
                   active && 'bg-crown-navy text-white ring-2 ring-crown-gold ring-offset-2',
-                  !done && !active && 'bg-gray-100 text-muted'
+                  !done && !active && 'bg-subtle text-muted'
                 )}
               >
                 {done ? <Check size={14} strokeWidth={3} /> : idx + 1}

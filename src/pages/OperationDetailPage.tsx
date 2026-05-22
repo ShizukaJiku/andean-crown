@@ -3,22 +3,22 @@ import { ChevronLeft, AlertTriangle, Upload } from 'lucide-react'
 import { StatusBadge } from '../components/ui/Badge'
 import { StatusTimeline } from '../components/features/StatusTimeline'
 import { Button } from '../components/ui/Button'
-import { useOperationsStore } from '../store/operations.store'
+import { useUserOperations } from '../store/operations.store'
 import { formatPEN, formatUSD, formatDateTime } from '../lib/format'
 
 export function OperationDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const { operations } = useOperationsStore()
+  const operations = useUserOperations()
   const op = operations.find((o) => o.id === id)
 
   if (!op) {
     return (
       <div className="mobile-shell flex items-center justify-center">
-        <div className="text-center px-6">
-          <p className="text-lg font-bold text-text">Operación no encontrada</p>
+        <main id="main-content" className="text-center px-6">
+          <h1 className="text-lg font-bold text-text">Operación no encontrada</h1>
           <Button className="mt-4" onClick={() => navigate('/operations')}>Volver al historial</Button>
-        </div>
+        </main>
       </div>
     )
   }
@@ -29,34 +29,39 @@ export function OperationDetailPage() {
     <div className="mobile-shell">
       {/* Header */}
       <div className="flex items-center gap-3 px-4 pt-safe pt-4 pb-4 border-b border-border bg-surface sticky top-0 z-10">
-        <button onClick={() => navigate(-1)} className="p-2 -ml-2 rounded-xl hover:bg-gray-100">
-          <ChevronLeft size={22} className="text-text" />
+        <button
+          type="button"
+          aria-label="Volver"
+          onClick={() => navigate(-1)}
+          className="p-2 -ml-2 rounded-xl hover:bg-subtle"
+        >
+          <ChevronLeft size={22} className="text-text" aria-hidden="true" />
         </button>
         <div className="flex-1">
-          <p className="font-bold text-sm text-text">Detalle de operación</p>
+          <h1 className="font-bold text-sm text-text">Detalle de operación</h1>
           <p className="text-xs text-muted font-mono">{op.number}</p>
         </div>
         <StatusBadge status={op.status} size="sm" />
       </div>
 
-      <div className="flex-1 overflow-y-auto px-4 py-5 pb-8 space-y-5">
+      <main id="main-content" tabIndex={-1} className="flex-1 overflow-y-auto px-4 py-5 pb-8 space-y-5">
         {/* Amount hero */}
         <div className="bg-gradient-to-br from-crown-navy to-crown-deep rounded-2xl p-5 text-white">
-          <p className="text-xs text-white/50 mb-1">{isBuy ? 'Compraste' : 'Vendiste'}</p>
+          <p className="text-xs text-white/70 mb-1">{isBuy ? 'Compraste' : 'Vendiste'}</p>
           <p className="text-3xl font-bold text-crown-gold-light">
             {isBuy ? formatUSD(op.amountReceived) : formatPEN(op.amountReceived)}
           </p>
           <div className="flex items-center justify-between mt-3 pt-3 border-t border-white/10">
             <div>
-              <p className="text-xs text-white/40">Enviaste</p>
+              <p className="text-xs text-white/70">Enviaste</p>
               <p className="text-sm font-semibold">{isBuy ? formatPEN(op.amountSent) : formatUSD(op.amountSent)}</p>
             </div>
             <div className="text-right">
-              <p className="text-xs text-white/40">Tipo de cambio</p>
+              <p className="text-xs text-white/70">Tipo de cambio</p>
               <p className="text-sm font-semibold">S/ {op.rate.toFixed(4)}</p>
             </div>
             <div className="text-right">
-              <p className="text-xs text-white/40">Banco</p>
+              <p className="text-xs text-white/70">Banco</p>
               <p className="text-sm font-semibold">{op.bank}</p>
             </div>
           </div>
@@ -112,7 +117,7 @@ export function OperationDetailPage() {
         <Button variant="outline" fullWidth onClick={() => navigate('/operations')}>
           Volver al historial
         </Button>
-      </div>
+      </main>
     </div>
   )
 }

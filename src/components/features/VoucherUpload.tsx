@@ -36,20 +36,24 @@ export function VoucherUpload({ onVoucherReady }: VoucherUploadProps) {
   return (
     <div className="flex flex-col gap-4">
       {/* Mode toggle */}
-      <div className="flex bg-gray-100 rounded-xl p-1">
+      <div className="flex bg-subtle rounded-xl p-1">
         <button
+          type="button"
           onClick={() => setMode('file')}
+          aria-pressed={mode === 'file'}
           className={cn(
-            'flex-1 py-2 text-sm font-medium rounded-lg transition-all',
+            'flex-1 py-2 min-h-[40px] text-sm font-medium rounded-lg transition-all',
             mode === 'file' ? 'bg-white text-text shadow-sm' : 'text-muted'
           )}
         >
           Subir imagen / PDF
         </button>
         <button
+          type="button"
           onClick={() => setMode('code')}
+          aria-pressed={mode === 'code'}
           className={cn(
-            'flex-1 py-2 text-sm font-medium rounded-lg transition-all',
+            'flex-1 py-2 min-h-[40px] text-sm font-medium rounded-lg transition-all',
             mode === 'code' ? 'bg-white text-text shadow-sm' : 'text-muted'
           )}
         >
@@ -68,7 +72,7 @@ export function VoucherUpload({ onVoucherReady }: VoucherUploadProps) {
               )}
             >
               <input {...getInputProps()} />
-              <div className="w-14 h-14 bg-gray-100 rounded-2xl flex items-center justify-center">
+              <div className="w-14 h-14 bg-subtle rounded-2xl flex items-center justify-center">
                 <Upload size={24} className="text-muted" />
               </div>
               <div className="text-center">
@@ -89,10 +93,12 @@ export function VoucherUpload({ onVoucherReady }: VoucherUploadProps) {
                 <p className="text-xs text-muted">{(file.size / 1024).toFixed(0)} KB</p>
               </div>
               <button
+                type="button"
+                aria-label="Quitar archivo"
                 onClick={() => { setFile(null); onVoucherReady('') }}
-                className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
+                className="tap-target hover:bg-subtle rounded-lg transition-colors"
               >
-                <X size={16} className="text-muted" />
+                <X size={16} className="text-muted" aria-hidden="true" />
               </button>
             </div>
           )}

@@ -13,9 +13,11 @@ export function OperationCard({ operation }: OperationCardProps) {
   const isBuy = operation.type === 'buy'
 
   return (
-    <div
+    <button
+      type="button"
       onClick={() => navigate(`/operations/${operation.id}`)}
-      className="flex items-center gap-3 p-4 bg-surface border border-border rounded-2xl cursor-pointer active:scale-[0.98] transition-transform"
+      aria-label={`Ver operación ${operation.number}, ${isBuy ? 'compra' : 'venta'} de dólares`}
+      className="w-full text-left flex items-center gap-3 p-4 bg-surface border border-border rounded-2xl cursor-pointer active:scale-[0.98] transition-transform"
     >
       {/* Icon */}
       <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${isBuy ? 'bg-success-bg' : 'bg-info-bg'}`}>
@@ -47,10 +49,10 @@ export function OperationCard({ operation }: OperationCardProps) {
           <StatusBadge status={operation.status} size="sm" />
           <div className="flex items-center gap-1 text-muted">
             <span className="text-xs">{formatDate(operation.createdAt)}</span>
-            <ChevronRight size={14} />
+            <ChevronRight size={14} aria-hidden="true" />
           </div>
         </div>
       </div>
-    </div>
+    </button>
   )
 }

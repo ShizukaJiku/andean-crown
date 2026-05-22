@@ -3,8 +3,10 @@ import { useNavigate } from 'react-router-dom'
 import { ChevronLeft, Bell, BellOff, Trash2, ArrowDownLeft, ArrowUpRight, Plus } from 'lucide-react'
 import { BottomNav } from '../components/ui/BottomNav'
 import { Button } from '../components/ui/Button'
-import { useAlertsStore } from '../store/alerts.store'
+import { useAlertsStore, useUserAlerts } from '../store/alerts.store'
 import { useExchangeStore } from '../store/exchange.store'
+import { useAuthStore } from '../store/auth.store'
+import { toast } from '../store/toast.store'
 
 /**
  * FX-32 — Rate watch (alertas de tipo de cambio).
@@ -12,19 +14,24 @@ import { useExchangeStore } from '../store/exchange.store'
  */
 export function AlertsPage() {
   const navigate = useNavigate()
-  const { alerts, addAlert, removeAlert, toggleAlert } = useAlertsStore()
+  const { addAlert, removeAlert, toggleAlert } = useAlertsStore()
+  const alerts = useUserAlerts()
+  const { user } = useAuthStore()
   const { rate } = useExchangeStore()
 
   const [direction, setDirection] = useState<'buy' | 'sell'>('buy')
   const [targetRate, setTargetRate] = useState('')
+  const [confirmId, setConfirmId] = useState<string | null>(null)
 
   const targetNum = parseFloat(targetRate) || 0
   const currentForDirection = direction === 'buy' ? rate.sell : rate.buy
   const isReasonable = targetNum > 0 && Math.abs(targetNum - currentForDirection) / currentForDirection < 0.10
 
+  if (!user) return null
+
   const handleCreate = () => {
     if (!isReasonable) return
-    addAlert(direction, targetNum)
+    addAlert(user.id, direction, targetNum)
     setTargetRate('')
   }
 
@@ -36,7 +43,7 @@ export function AlertsPage() {
           onClick={() => navigate(-1)}
           type="button"
           aria-label="Volver"
-          className="tap-target -ml-2 rounded-xl hover:bg-gray-100"
+          className="tap-target -ml-2 rounded-xl hover:bg-subtle"
         >
           <ChevronLeft size={22} className="text-text" aria-hidden="true" />
         </button>
@@ -157,51 +164,79 @@ export function AlertsPage() {
                 return (
                   <li
                     key={a.id}
-                    className={`bg-surface border rounded-2xl p-3 flex items-center gap-3 ${
+                    className={`bg-surface border rounded-2xl p-3 ${
                       triggered ? 'border-success bg-success-bg/30' : 'border-border'
                     }`}
                   >
-                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
-                      triggered ? 'bg-success/20' : isBuy ? 'bg-success-bg' : 'bg-info-bg'
-                    }`} aria-hidden="true">
-                      {triggered
-                        ? <Bell size={16} className="text-success" />
-                        : isBuy
-                          ? <ArrowDownLeft size={16} className="text-success" />
-                          : <ArrowUpRight size={16} className="text-info" />}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-text">
-                        {isBuy ? 'Comprar' : 'Vender'} USD a S/ {a.targetRate.toFixed(3)}
-                      </p>
-                      <p className="text-[11px] text-muted">
-                        {triggered
-                          ? `¡Disparada el ${a.triggeredAt!.toLocaleString('es-PE')}!`
-                          : a.active
-                            ? 'Activa · te avisaremos por push'
-                            : 'Pausada'}
-                      </p>
-                    </div>
-                    {!triggered && (
-                      <button
-                        type="button"
-                        aria-label={a.active ? 'Pausar alerta' : 'Activar alerta'}
-                        onClick={() => toggleAlert(a.id)}
-                        className="tap-target rounded-lg hover:bg-gray-100"
-                      >
-                        {a.active
-                          ? <Bell size={14} className="text-crown-gold-dim" aria-hidden="true" />
-                          : <BellOff size={14} className="text-muted" aria-hidden="true" />}
-                      </button>
+                    {confirmId === a.id ? (
+                      <div className="flex items-center justify-between gap-3">
+                        <p className="text-sm font-medium text-text">¿Eliminar esta alerta?</p>
+                        <div className="flex gap-2 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              removeAlert(user.id, a.id)
+                              setConfirmId(null)
+                              toast('Alerta eliminada')
+                            }}
+                            className="text-xs font-semibold text-error bg-error-bg rounded-lg px-3 min-h-[40px]"
+                          >
+                            Eliminar
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setConfirmId(null)}
+                            className="text-xs font-semibold text-muted bg-subtle rounded-lg px-3 min-h-[40px]"
+                          >
+                            Cancelar
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-3">
+                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
+                          triggered ? 'bg-success/20' : isBuy ? 'bg-success-bg' : 'bg-info-bg'
+                        }`} aria-hidden="true">
+                          {triggered
+                            ? <Bell size={16} className="text-success" />
+                            : isBuy
+                              ? <ArrowDownLeft size={16} className="text-success" />
+                              : <ArrowUpRight size={16} className="text-info" />}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-text">
+                            {isBuy ? 'Comprar' : 'Vender'} USD a S/ {a.targetRate.toFixed(3)}
+                          </p>
+                          <p className="text-[11px] text-muted">
+                            {triggered
+                              ? `¡Disparada el ${a.triggeredAt!.toLocaleString('es-PE')}!`
+                              : a.active
+                                ? 'Activa · te avisaremos por push'
+                                : 'Pausada'}
+                          </p>
+                        </div>
+                        {!triggered && (
+                          <button
+                            type="button"
+                            aria-label={a.active ? 'Pausar alerta' : 'Activar alerta'}
+                            onClick={() => toggleAlert(user.id, a.id)}
+                            className="tap-target rounded-lg hover:bg-subtle"
+                          >
+                            {a.active
+                              ? <Bell size={14} className="text-crown-gold-dim" aria-hidden="true" />
+                              : <BellOff size={14} className="text-muted" aria-hidden="true" />}
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          aria-label="Eliminar alerta"
+                          onClick={() => setConfirmId(a.id)}
+                          className="tap-target rounded-lg hover:bg-error-bg"
+                        >
+                          <Trash2 size={14} className="text-error" aria-hidden="true" />
+                        </button>
+                      </div>
                     )}
-                    <button
-                      type="button"
-                      aria-label="Eliminar alerta"
-                      onClick={() => removeAlert(a.id)}
-                      className="tap-target rounded-lg hover:bg-error-bg"
-                    >
-                      <Trash2 size={14} className="text-error" aria-hidden="true" />
-                    </button>
                   </li>
                 )
               })}

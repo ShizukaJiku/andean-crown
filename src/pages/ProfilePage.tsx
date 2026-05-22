@@ -7,7 +7,10 @@ import {
 import { BottomNav } from '../components/ui/BottomNav'
 import { Badge } from '../components/ui/Badge'
 import { Button } from '../components/ui/Button'
+import { Sheet } from '../components/ui/Sheet'
+import { AddAccountForm } from '../components/features/AddAccountForm'
 import { useAuthStore } from '../store/auth.store'
+import { toast } from '../store/toast.store'
 import type { BankAccount } from '../data/mock-user'
 
 const bankColors: Record<string, string> = {
@@ -16,14 +19,26 @@ const bankColors: Record<string, string> = {
 
 export function ProfilePage() {
   const navigate = useNavigate()
-  const { user, logout } = useAuthStore()
+  const { user, logout, addAccount, removeAccount } = useAuthStore()
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
+  const [showAddAccount, setShowAddAccount] = useState(false)
 
   if (!user) return null
 
   const handleLogout = () => {
     logout()
     navigate('/', { replace: true })
+  }
+
+  const handleDeleteAccount = (id: string) => {
+    removeAccount(id)
+    toast('Cuenta bancaria eliminada')
+  }
+
+  const handleAddAccount = (account: Omit<BankAccount, 'id' | 'isPrimary'>) => {
+    addAccount(account)
+    setShowAddAccount(false)
+    toast('Cuenta bancaria agregada')
   }
 
   return (
@@ -38,7 +53,7 @@ export function ProfilePage() {
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-white font-bold text-lg">{user.name}</p>
-            <p className="text-white/50 text-sm truncate">{user.email}</p>
+            <p className="text-white/70 text-sm truncate">{user.email}</p>
             <div className="flex items-center gap-2 mt-1.5">
               <Badge variant="success" size="sm">
                 <ShieldCheck size={11} className="mr-0.5" />
@@ -50,7 +65,8 @@ export function ProfilePage() {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-4 py-5 pb-28 space-y-5">
+      <main id="main-content" tabIndex={-1} className="flex-1 overflow-y-auto px-4 py-5 pb-28 space-y-5">
+        <h1 className="sr-only">Mi perfil</h1>
         {/* Personal info */}
         <Section title="Datos personales">
           <InfoRow icon={<User size={15} />} label="Nombre completo" value={user.name} />
@@ -63,14 +79,28 @@ export function ProfilePage() {
         <div>
           <div className="flex items-center justify-between mb-3">
             <p className="text-xs font-semibold text-muted uppercase tracking-wider">Cuentas bancarias</p>
-            <button className="flex items-center gap-1 text-xs font-semibold text-crown-gold-dim">
-              <Plus size={14} /> Agregar
+            <button
+              type="button"
+              onClick={() => setShowAddAccount(true)}
+              className="flex items-center gap-1 text-xs font-semibold text-crown-gold-dim min-h-[44px]"
+            >
+              <Plus size={14} aria-hidden="true" /> Agregar
             </button>
           </div>
           <div className="space-y-2">
-            {user.accounts.map((acc) => (
-              <AccountCard key={acc.id} account={acc} />
-            ))}
+            {user.accounts.length > 0 ? (
+              user.accounts.map((acc) => (
+                <AccountCard
+                  key={acc.id}
+                  account={acc}
+                  onDelete={() => handleDeleteAccount(acc.id)}
+                />
+              ))
+            ) : (
+              <p className="text-xs text-muted bg-surface border border-border border-dashed rounded-2xl p-4 text-center">
+                No tienes cuentas registradas.
+              </p>
+            )}
           </div>
         </div>
 
@@ -92,8 +122,9 @@ export function ProfilePage() {
           </div>
         ) : (
           <button
+            type="button"
             onClick={() => setShowLogoutConfirm(true)}
-            className="flex items-center gap-3 w-full text-left p-4 bg-surface border border-border rounded-2xl hover:bg-gray-50 transition-colors"
+            className="flex items-center gap-3 w-full text-left p-4 bg-surface border border-border rounded-2xl hover:bg-subtle transition-colors"
           >
             <div className="w-8 h-8 bg-error-bg rounded-xl flex items-center justify-center shrink-0">
               <LogOut size={15} className="text-error" />
@@ -106,9 +137,17 @@ export function ProfilePage() {
         <p className="text-center text-xs text-muted pb-2">
           Andean Crown v1.0.0 · Registrado en SBS
         </p>
-      </div>
+      </main>
 
       <BottomNav />
+
+      <Sheet
+        open={showAddAccount}
+        onClose={() => setShowAddAccount(false)}
+        title="Agregar cuenta bancaria"
+      >
+        <AddAccountForm onSubmit={handleAddAccount} onCancel={() => setShowAddAccount(false)} />
+      </Sheet>
     </div>
   )
 }
@@ -138,15 +177,41 @@ function InfoRow({ icon, label, value }: { icon: React.ReactNode; label: string;
 
 function MenuRow({ icon, label }: { icon: React.ReactNode; label: string }) {
   return (
-    <button className="flex items-center gap-3 px-4 py-3 w-full hover:bg-gray-50 transition-colors">
+    <button type="button" className="flex items-center gap-3 px-4 py-3 w-full min-h-[44px] hover:bg-subtle transition-colors">
       <div className="text-muted shrink-0">{icon}</div>
       <span className="flex-1 text-sm text-text text-left">{label}</span>
-      <ChevronRight size={15} className="text-muted" />
+      <ChevronRight size={15} className="text-muted" aria-hidden="true" />
     </button>
   )
 }
 
-function AccountCard({ account }: { account: BankAccount }) {
+function AccountCard({ account, onDelete }: { account: BankAccount; onDelete: () => void }) {
+  const [confirming, setConfirming] = useState(false)
+
+  if (confirming) {
+    return (
+      <div className="bg-surface border border-error/30 rounded-2xl p-4 flex items-center justify-between gap-3">
+        <p className="text-sm font-medium text-text">¿Eliminar esta cuenta?</p>
+        <div className="flex gap-2 shrink-0">
+          <button
+            type="button"
+            onClick={onDelete}
+            className="text-xs font-semibold text-error bg-error-bg rounded-lg px-3 min-h-[40px]"
+          >
+            Eliminar
+          </button>
+          <button
+            type="button"
+            onClick={() => setConfirming(false)}
+            className="text-xs font-semibold text-muted bg-subtle rounded-lg px-3 min-h-[40px]"
+          >
+            Cancelar
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="bg-surface border border-border rounded-2xl p-4 flex items-center gap-3">
       <div
@@ -165,8 +230,13 @@ function AccountCard({ account }: { account: BankAccount }) {
           ···{account.cci.slice(-6)}
         </p>
       </div>
-      <button className="p-2 hover:bg-gray-100 rounded-xl transition-colors">
-        <Trash2 size={15} className="text-muted" />
+      <button
+        type="button"
+        aria-label={`Eliminar cuenta ${account.bank}`}
+        onClick={() => setConfirming(true)}
+        className="tap-target hover:bg-subtle rounded-xl transition-colors"
+      >
+        <Trash2 size={15} className="text-muted" aria-hidden="true" />
       </button>
     </div>
   )

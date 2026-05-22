@@ -8,13 +8,13 @@ import { InnovationBanner } from '../components/features/InnovationBanner'
 import { TransparencyCard } from '../components/features/TransparencyCard'
 import { TrustDashboard } from '../components/features/TrustDashboard'
 import { useAuthStore } from '../store/auth.store'
-import { useOperationsStore } from '../store/operations.store'
+import { useUserOperations } from '../store/operations.store'
 import { useExchangeStore } from '../store/exchange.store'
 
 export function HomePage() {
   const navigate = useNavigate()
   const { user } = useAuthStore()
-  const { operations } = useOperationsStore()
+  const operations = useUserOperations()
   const { setDirection } = useExchangeStore()
 
   const recentOps = operations.slice(0, 3)
@@ -63,12 +63,13 @@ export function HomePage() {
 
       {/* Floating rate card */}
       <main id="main-content" tabIndex={-1}>
+      <h1 className="sr-only">Inicio — Andean Crown</h1>
       <div className="px-4 -mt-4 space-y-3">
         <ExchangeRateCard />
         <TransparencyCard />
       </div>
 
-      {/* Trust dashboard: SLA real en vivo */}
+      {/* Trust dashboard: datos de rendimiento en vivo */}
       <div className="px-4 mt-4">
         <TrustDashboard />
       </div>

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { ArrowUpDown, Clock } from 'lucide-react'
 import { useExchangeStore } from '../../store/exchange.store'
-import { formatPEN, formatUSD, formatCountdown } from '../../lib/format'
+import { formatPEN, formatUSD, formatCountdown, groupThousands } from '../../lib/format'
 import { Button } from '../ui/Button'
 
 interface ExchangeCalculatorProps {
@@ -18,6 +18,7 @@ export function ExchangeCalculator({ onConfirm }: ExchangeCalculatorProps) {
   } = useExchangeStore()
 
   const [touched, setTouched] = useState(false)
+  const [amountFocused, setAmountFocused] = useState(false)
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const result = getAmountResult()
@@ -62,21 +63,23 @@ export function ExchangeCalculator({ onConfirm }: ExchangeCalculatorProps) {
       {/* Direction toggle */}
       <div className="relative">
         {/* Send */}
-        <div className="bg-surface border border-border rounded-2xl p-4 pb-8">
+        <div className="bg-surface border border-border rounded-2xl p-4 pb-8 transition-colors focus-within:border-crown-gold">
           <p className="text-xs text-muted mb-2 font-medium">
             {isBuy ? 'Envías (Soles)' : 'Envías (Dólares)'}
           </p>
           <div className="flex items-center gap-2">
             <span className="text-lg font-bold text-muted">{isBuy ? 'S/' : '$'}</span>
             <input
-              type="number"
+              type="text"
               inputMode="decimal"
               placeholder="0.00"
-              value={amountInput}
+              value={amountFocused ? amountInput : groupThousands(amountInput)}
               onChange={(e) => handleAmountChange(e.target.value)}
+              onFocus={() => setAmountFocused(true)}
+              onBlur={() => setAmountFocused(false)}
               aria-label={isBuy ? 'Monto a enviar en soles' : 'Monto a enviar en dólares'}
               aria-invalid={touched && amount <= 0 ? 'true' : 'false'}
-              className="flex-1 text-3xl font-bold text-text bg-transparent outline-none placeholder:text-gray-400 min-w-0"
+              className="flex-1 text-3xl font-bold text-text bg-transparent outline-none placeholder:text-placeholder min-w-0"
             />
             <span className="text-sm font-semibold bg-crown-navy/8 rounded-lg px-2.5 py-1 text-crown-navy">
               {isBuy ? 'PEN' : 'USD'}
@@ -111,7 +114,7 @@ export function ExchangeCalculator({ onConfirm }: ExchangeCalculatorProps) {
                 ? isBuy
                   ? result.toFixed(2)
                   : result.toFixed(2)
-                : <span className="text-gray-400" aria-hidden="true">0.00</span>
+                : <span className="text-placeholder" aria-hidden="true">0.00</span>
               }
             </span>
             <span className="text-sm font-semibold bg-crown-gold/15 rounded-lg px-2.5 py-1 text-crown-gold-dim">
@@ -150,7 +153,7 @@ export function ExchangeCalculator({ onConfirm }: ExchangeCalculatorProps) {
       ) : expired ? (
         <div className="bg-error-bg rounded-xl px-4 py-3 flex items-center justify-between">
           <span className="text-xs text-error font-medium">Cotización expirada</span>
-          <button onClick={handleCotizar} className="text-xs font-bold text-error underline">
+          <button type="button" onClick={handleCotizar} className="text-xs font-bold text-error underline min-h-[44px] px-2">
             Recotizar
           </button>
         </div>
@@ -181,9 +184,6 @@ export function ExchangeCalculator({ onConfirm }: ExchangeCalculatorProps) {
         </Button>
       )}
 
-      <p className="text-center text-xs text-muted">
-        Sin comisiones ocultas · <span className="text-crown-navy font-semibold">Garantía SLA 15 min</span>
-      </p>
     </div>
   )
 }

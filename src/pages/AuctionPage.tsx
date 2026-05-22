@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { BottomNav } from '../components/ui/BottomNav'
 import { Button } from '../components/ui/Button'
 import { useExchangeStore } from '../store/exchange.store'
-import { formatPEN, formatUSD } from '../lib/format'
+import { formatPEN, formatUSD, groupThousands } from '../lib/format'
 
 /**
  * FX-29 — Subasta de tipo de cambio (modelo inDrive).
@@ -20,6 +20,7 @@ export function AuctionPage() {
   const navigate = useNavigate()
   const { rate } = useExchangeStore()
   const [amount, setAmount] = useState('')
+  const [amountFocused, setAmountFocused] = useState(false)
   const [proposedRate, setProposedRate] = useState('')
   const [status, setStatus] = useState<AuctionStatus>('idle')
   const [counterRate, setCounterRate] = useState<number | null>(null)
@@ -57,16 +58,21 @@ export function AuctionPage() {
     <div className="mobile-shell">
       {/* Header */}
       <div className="flex items-center gap-3 px-4 pt-safe pt-4 pb-3 border-b border-border bg-surface sticky top-0 z-10">
-        <button onClick={() => navigate('/home')} className="p-2 -ml-2 rounded-xl hover:bg-gray-100">
-          <ChevronLeft size={22} className="text-text" />
+        <button
+          type="button"
+          aria-label="Volver"
+          onClick={() => navigate('/home')}
+          className="p-2 -ml-2 rounded-xl hover:bg-subtle"
+        >
+          <ChevronLeft size={22} className="text-text" aria-hidden="true" />
         </button>
         <div>
-          <p className="font-bold text-sm text-text">Subasta de tipo de cambio</p>
-          <p className="text-xs text-muted">Propón tu propia tasa (Fase 2)</p>
+          <h1 className="font-bold text-sm text-text">Subasta de tipo de cambio</h1>
+          <p className="text-xs text-muted">Propón tu propia tasa</p>
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-4 py-5 pb-32">
+      <main id="main-content" tabIndex={-1} className="flex-1 overflow-y-auto px-4 py-5 pb-32">
         {/* Hero explicativo */}
         <div className="bg-gradient-to-br from-crown-navy to-crown-deep rounded-2xl p-5 text-white mb-5">
           <div className="flex items-center gap-2 mb-3">
@@ -75,13 +81,13 @@ export function AuctionPage() {
             </div>
             <div>
               <p className="font-bold text-base text-crown-gold-light">¿Cómo funciona?</p>
-              <p className="text-xs text-white/60">Modelo subasta tipo inDrive</p>
+              <p className="text-xs text-white/60">Para operaciones grandes</p>
             </div>
           </div>
           <ol className="text-xs text-white/80 space-y-1.5 list-decimal list-inside leading-relaxed">
             <li>Operaciones desde USD {MIN_AMOUNT.toLocaleString('en-US')}.</li>
             <li>Propones tu tasa dentro de ±1.5% del mercado.</li>
-            <li>Nuestro backoffice acepta, rechaza o contraoferta en 3 minutos.</li>
+            <li>Aceptamos, rechazamos o contraofertamos en pocos minutos.</li>
             <li>Si aceptas, congelamos la tasa y continúas el flujo normal.</li>
           </ol>
         </div>
@@ -105,18 +111,22 @@ export function AuctionPage() {
               </div>
 
               {/* Monto */}
-              <div className="bg-surface border border-border rounded-2xl p-4">
-                <label className="text-xs text-muted mb-2 font-medium block">
+              <div className="bg-surface border border-border rounded-2xl p-4 transition-colors focus-within:border-crown-gold">
+                <label htmlFor="auction-amount" className="text-xs text-muted mb-2 font-medium block">
                   Monto en USD (mínimo {formatUSD(MIN_AMOUNT)})
                 </label>
                 <div className="flex items-center gap-2">
-                  <span className="text-lg font-bold text-muted">$</span>
+                  <span className="text-lg font-bold text-muted" aria-hidden="true">$</span>
                   <input
-                    type="number"
+                    id="auction-amount"
+                    type="text"
+                    inputMode="decimal"
                     placeholder="5,000"
-                    value={amount}
+                    value={amountFocused ? amount : groupThousands(amount)}
                     onChange={(e) => setAmount(e.target.value.replace(/[^0-9.]/g, ''))}
-                    className="flex-1 text-2xl font-bold text-text bg-transparent outline-none placeholder:text-gray-200 min-w-0"
+                    onFocus={() => setAmountFocused(true)}
+                    onBlur={() => setAmountFocused(false)}
+                    className="flex-1 text-2xl font-bold text-text bg-transparent outline-none placeholder:text-placeholder min-w-0"
                   />
                   <span className="text-sm font-semibold bg-crown-navy/8 rounded-lg px-2.5 py-1 text-crown-navy">USD</span>
                 </div>
@@ -126,19 +136,20 @@ export function AuctionPage() {
               </div>
 
               {/* Tasa propuesta */}
-              <div className="bg-surface border border-border rounded-2xl p-4">
-                <label className="text-xs text-muted mb-2 font-medium block">
+              <div className="bg-surface border border-border rounded-2xl p-4 transition-colors focus-within:border-crown-gold">
+                <label htmlFor="auction-rate" className="text-xs text-muted mb-2 font-medium block">
                   Tu propuesta (entre S/ {minAllowedRate.toFixed(4)} y S/ {maxAllowedRate.toFixed(4)})
                 </label>
                 <div className="flex items-center gap-2">
-                  <span className="text-lg font-bold text-muted">S/</span>
+                  <span className="text-lg font-bold text-muted" aria-hidden="true">S/</span>
                   <input
-                    type="number"
-                    step="0.0001"
+                    id="auction-rate"
+                    type="text"
+                    inputMode="decimal"
                     placeholder={marketRate.toFixed(4)}
                     value={proposedRate}
                     onChange={(e) => setProposedRate(e.target.value.replace(/[^0-9.]/g, ''))}
-                    className="flex-1 text-2xl font-bold text-text bg-transparent outline-none placeholder:text-gray-200 min-w-0"
+                    className="flex-1 text-2xl font-bold text-text bg-transparent outline-none placeholder:text-placeholder min-w-0"
                   />
                   <span className="text-sm font-semibold bg-crown-gold/15 rounded-lg px-2.5 py-1 text-crown-gold-dim">por 1 USD</span>
                 </div>
@@ -238,7 +249,7 @@ export function AuctionPage() {
             </motion.div>
           )}
         </AnimatePresence>
-      </div>
+      </main>
 
       <BottomNav />
     </div>

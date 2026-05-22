@@ -10,8 +10,10 @@
   --color-crown-gold-dim: #9B7A1A;
   --color-bg: #F8FAFC;
   --color-surface: #FFFFFF;
+  --color-subtle: #F1F5F9;
   --color-text: #1E293B;
   --color-muted: #64748B;
+  --color-placeholder: #94A3B8;
   --color-border: #E2E8F0;
   --color-success: #16A34A;
   --color-success-bg: #DCFCE7;
@@ -77,6 +79,15 @@ html {
   outline: 2px solid var(--color-crown-gold);
   outline-offset: 2px;
   border-radius: 6px;
+}
+
+/* Los campos de formulario muestran su foco mediante el contenedor
+   (focus-within: borde + ring dorado). Evita un segundo borde con radio
+   distinto al del wrapper redondeado. */
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: none;
 }
 
 /* Skip link visible solo cuando recibe foco por teclado */

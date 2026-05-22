@@ -17,11 +17,14 @@ export function Button({
   className,
   children,
   disabled,
+  type = 'button',
   ...props
 }: ButtonProps) {
   return (
     <button
+      type={type}
       disabled={disabled || loading}
+      aria-busy={loading || undefined}
       className={cn(
         'inline-flex items-center justify-center gap-2 font-semibold rounded-xl transition-all duration-150 active:scale-[0.97] select-none',
         {
@@ -30,11 +33,11 @@ export function Button({
             variant === 'primary',
           'bg-crown-navy text-white hover:bg-crown-deep disabled:opacity-50 disabled:cursor-not-allowed':
             variant === 'secondary',
-          'bg-transparent text-crown-gold hover:bg-crown-gold/10 disabled:opacity-50':
+          'bg-transparent text-crown-gold-dim hover:bg-crown-gold/10 disabled:opacity-50':
             variant === 'ghost',
           'bg-red-50 text-error border border-error/30 hover:bg-red-100 disabled:opacity-50':
             variant === 'danger',
-          'bg-transparent border border-border text-text hover:bg-gray-50 disabled:opacity-50':
+          'bg-transparent border border-border text-text hover:bg-subtle disabled:opacity-50':
             variant === 'outline',
           // sizes
           'text-xs px-3 py-2 h-8': size === 'sm',

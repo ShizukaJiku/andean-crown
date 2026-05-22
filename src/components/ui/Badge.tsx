@@ -45,7 +45,7 @@ export function Badge({ children, variant = 'default', size = 'md', className }:
         'inline-flex items-center font-medium rounded-full',
         size === 'sm' ? 'text-xs px-2 py-0.5' : 'text-xs px-3 py-1',
         {
-          'bg-gray-100 text-gray-600': variant === 'default',
+          'bg-subtle text-muted': variant === 'default',
           'bg-success-bg text-success': variant === 'success',
           'bg-warning-bg text-warning': variant === 'warning',
           'bg-error-bg text-error': variant === 'error',

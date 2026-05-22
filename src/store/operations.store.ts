@@ -1,22 +1,49 @@
 import { create } from 'zustand'
+import { persist } from 'zustand/middleware'
 import { mockOperations, type Operation, type OperationStatus } from '../data/mock-operations'
+import { mockUser } from '../data/mock-user'
+import { dateAwareStorage } from '../lib/persist'
+import { useAuthStore } from './auth.store'
 
 interface OperationsState {
-  operations: Operation[]
-  addOperation: (op: Operation) => void
-  updateStatus: (id: string, status: OperationStatus) => void
+  /** Operaciones por usuario: cada cuenta tiene su propio historial. */
+  byUser: Record<string, Operation[]>
+  addOperation: (userId: string, op: Operation) => void
+  updateStatus: (userId: string, id: string, status: OperationStatus) => void
 }
 
-export const useOperationsStore = create<OperationsState>((set) => ({
-  operations: [...mockOperations],
+// Referencia estable para "sin operaciones" (evita renders en bucle).
+const EMPTY: Operation[] = []
 
-  addOperation: (op) =>
-    set((state) => ({ operations: [op, ...state.operations] })),
+export const useOperationsStore = create<OperationsState>()(
+  persist(
+    (set) => ({
+      byUser: { [mockUser.id]: [...mockOperations] },
 
-  updateStatus: (id, status) =>
-    set((state) => ({
-      operations: state.operations.map((op) =>
-        op.id === id ? { ...op, status } : op
-      ),
-    })),
-}))
+      addOperation: (userId, op) =>
+        set((state) => ({
+          byUser: {
+            ...state.byUser,
+            [userId]: [op, ...(state.byUser[userId] ?? EMPTY)],
+          },
+        })),
+
+      updateStatus: (userId, id, status) =>
+        set((state) => ({
+          byUser: {
+            ...state.byUser,
+            [userId]: (state.byUser[userId] ?? EMPTY).map((op) =>
+              op.id === id ? { ...op, status } : op,
+            ),
+          },
+        })),
+    }),
+    { name: 'andean-operations-v2', storage: dateAwareStorage<OperationsState>() },
+  ),
+)
+
+/** Operaciones del usuario autenticado actual. */
+export function useUserOperations(): Operation[] {
+  const userId = useAuthStore((s) => s.currentUserId)
+  return useOperationsStore((s) => (userId ? s.byUser[userId] ?? EMPTY : EMPTY))
+}

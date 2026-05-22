@@ -38,14 +38,29 @@ export function formatDateTime(date: Date | string): string {
   }).format(d)
 }
 
-export function formatTimeAgo(date: Date): string {
-  const diffMs = Date.now() - date.getTime()
+export function formatTimeAgo(date: Date | string): string {
+  const d = typeof date === 'string' ? new Date(date) : date
+  const diffMs = Date.now() - d.getTime()
   const diffMin = Math.floor(diffMs / 60000)
   if (diffMin < 1) return 'justo ahora'
   if (diffMin < 60) return `hace ${diffMin} min`
   const diffHrs = Math.floor(diffMin / 60)
   if (diffHrs < 24) return `hace ${diffHrs}h`
-  return formatDate(date)
+  return formatDate(d)
+}
+
+/**
+ * Agrupa los miles de la parte entera de una cadena numérica cruda,
+ * preservando el punto decimal mientras el usuario escribe.
+ * "5000" → "5,000" · "1234.5" → "1,234.5" · "1234." → "1,234."
+ */
+export function groupThousands(raw: string): string {
+  if (!raw) return ''
+  const dot = raw.indexOf('.')
+  const intPart = dot === -1 ? raw : raw.slice(0, dot)
+  const decPart = dot === -1 ? '' : raw.slice(dot)
+  const grouped = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+  return grouped + decPart
 }
 
 export function formatCountdown(seconds: number): string {

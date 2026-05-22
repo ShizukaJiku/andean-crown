@@ -1,15 +1,14 @@
 import { create } from 'zustand'
+import { persist } from 'zustand/middleware'
+import { dateAwareStorage } from '../lib/persist'
+import { useAuthStore } from './auth.store'
 
 /**
- * Rate alerts (avísame cuando el USD esté en S/ X).
- * Diferenciador funcional: ningún competidor peruano (Kambista, Rextie, Instakash)
- * lo ofrece hoy. Convierte la app de reactiva (el usuario entra y mira la tasa)
- * a proactiva (la app le avisa al usuario cuando conviene).
+ * Rate alerts (avísame cuando el USD esté en S/ X), propias de cada usuario.
  */
-
 export interface RateAlert {
   id: string
-  direction: 'buy' | 'sell'   // buy = compro USD, espero tasa baja; sell = vendo USD, espero tasa alta
+  direction: 'buy' | 'sell'
   targetRate: number
   active: boolean
   createdAt: Date
@@ -17,56 +16,62 @@ export interface RateAlert {
 }
 
 interface AlertsState {
-  alerts: RateAlert[]
-  addAlert: (direction: 'buy' | 'sell', targetRate: number) => void
-  removeAlert: (id: string) => void
-  toggleAlert: (id: string) => void
-  evaluate: (currentBuy: number, currentSell: number) => void
+  /** Alertas por usuario. */
+  byUser: Record<string, RateAlert[]>
+  addAlert: (userId: string, direction: 'buy' | 'sell', targetRate: number) => void
+  removeAlert: (userId: string, id: string) => void
+  toggleAlert: (userId: string, id: string) => void
 }
 
-export const useAlertsStore = create<AlertsState>((set) => ({
-  alerts: [],
+// Referencia estable para "sin alertas".
+const EMPTY: RateAlert[] = []
 
-  addAlert: (direction, targetRate) =>
-    set((s) => ({
-      alerts: [
-        {
-          id: `alert-${Date.now()}`,
-          direction,
-          targetRate,
-          active: true,
-          createdAt: new Date(),
-        },
-        ...s.alerts,
-      ],
-    })),
+export const useAlertsStore = create<AlertsState>()(
+  persist(
+    (set) => ({
+      byUser: {},
 
-  removeAlert: (id) =>
-    set((s) => ({ alerts: s.alerts.filter((a) => a.id !== id) })),
+      addAlert: (userId, direction, targetRate) =>
+        set((state) => ({
+          byUser: {
+            ...state.byUser,
+            [userId]: [
+              {
+                id: `alert-${Date.now()}`,
+                direction,
+                targetRate,
+                active: true,
+                createdAt: new Date(),
+              },
+              ...(state.byUser[userId] ?? EMPTY),
+            ],
+          },
+        })),
 
-  toggleAlert: (id) =>
-    set((s) => ({
-      alerts: s.alerts.map((a) => (a.id === id ? { ...a, active: !a.active } : a)),
-    })),
+      removeAlert: (userId, id) =>
+        set((state) => ({
+          byUser: {
+            ...state.byUser,
+            [userId]: (state.byUser[userId] ?? EMPTY).filter((a) => a.id !== id),
+          },
+        })),
 
-  /**
-   * Reglas:
-   *   - Si compras dólares (direction "buy"), te interesa que el tipo de venta BAJE.
-   *     Disparo cuando currentSell <= targetRate.
-   *   - Si vendes dólares (direction "sell"), te interesa que el tipo de compra SUBA.
-   *     Disparo cuando currentBuy >= targetRate.
-   */
-  evaluate: (currentBuy, currentSell) =>
-    set((s) => ({
-      alerts: s.alerts.map((a) => {
-        if (!a.active || a.triggeredAt) return a
-        const hit =
-          (a.direction === 'buy' && currentSell <= a.targetRate) ||
-          (a.direction === 'sell' && currentBuy >= a.targetRate)
-        return hit ? { ...a, triggeredAt: new Date(), active: false } : a
-      }),
-    })),
-}))
+      toggleAlert: (userId, id) =>
+        set((state) => ({
+          byUser: {
+            ...state.byUser,
+            [userId]: (state.byUser[userId] ?? EMPTY).map((a) =>
+              a.id === id ? { ...a, active: !a.active } : a,
+            ),
+          },
+        })),
+    }),
+    { name: 'andean-alerts-v2', storage: dateAwareStorage<AlertsState>() },
+  ),
+)
 
-// Selector helper para uso fuera del componente
-export const getActiveAlerts = () => useAlertsStore.getState().alerts.filter((a) => a.active)
+/** Alertas del usuario autenticado actual. */
+export function useUserAlerts(): RateAlert[] {
+  const userId = useAuthStore((s) => s.currentUserId)
+  return useAlertsStore((s) => (userId ? s.byUser[userId] ?? EMPTY : EMPTY))
+}

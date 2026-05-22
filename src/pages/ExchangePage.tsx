@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { ChevronLeft } from 'lucide-react'
+import { ChevronLeft, Landmark } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { BottomNav } from '../components/ui/BottomNav'
 import { StepIndicator } from '../components/ui/StepIndicator'
@@ -37,6 +37,7 @@ export function ExchangePage() {
   }
 
   const handleCreateOperation = () => {
+    if (!user) return
     const newOp: Operation = {
       id: `op-${Date.now()}`,
       number: `AC-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${String(Math.floor(Math.random() * 9000) + 1000)}`,
@@ -57,7 +58,7 @@ export function ExchangePage() {
         { status: 'completado', label: 'Completado', description: 'Abono acreditado.', timestamp: null },
       ],
     }
-    addOperation(newOp)
+    addOperation(user.id, newOp)
     resetExchange()
     navigate(`/status/${newOp.id}`)
   }
@@ -76,15 +77,62 @@ export function ExchangePage() {
     exit: { x: -20, opacity: 0 },
   }
 
+  // Sin una cuenta bancaria registrada no hay dónde recibir el abono:
+  // se bloquea la operación y se guía al usuario a agregar una.
+  if (!user || user.accounts.length === 0) {
+    return (
+      <div className="mobile-shell">
+        <div className="flex items-center gap-3 px-4 pt-safe pt-4 pb-3 border-b border-border bg-surface">
+          <button
+            type="button"
+            aria-label="Volver"
+            onClick={() => navigate('/home')}
+            className="p-2 -ml-2 rounded-xl hover:bg-subtle"
+          >
+            <ChevronLeft size={22} className="text-text" aria-hidden="true" />
+          </button>
+          <h1 className="font-bold text-sm text-text">Cambiar divisas</h1>
+        </div>
+        <main
+          id="main-content"
+          tabIndex={-1}
+          className="flex-1 flex flex-col items-center justify-center text-center px-8 gap-4 pb-28"
+        >
+          <div className="w-16 h-16 bg-warning-bg rounded-2xl flex items-center justify-center">
+            <Landmark size={26} className="text-warning" aria-hidden="true" />
+          </div>
+          <div>
+            <p className="text-base font-bold text-text">Agrega una cuenta bancaria</p>
+            <p className="text-sm text-muted mt-1">
+              Necesitas registrar la cuenta donde recibirás tu abono antes de poder operar.
+            </p>
+          </div>
+          <Button variant="primary" onClick={() => navigate('/profile')}>
+            Ir a agregar cuenta
+          </Button>
+        </main>
+        <BottomNav />
+      </div>
+    )
+  }
+
+  // Cuenta donde el usuario recibirá el abono (la principal por defecto).
+  const destinationAccount = user.accounts.find((a) => a.isPrimary) ?? user.accounts[0]
+
   return (
     <div className="mobile-shell">
       {/* Header */}
       <div className="flex items-center gap-3 px-4 pt-safe pt-4 pb-3 border-b border-border bg-surface sticky top-0 z-10">
-        <button onClick={handleBack} className="p-2 -ml-2 rounded-xl hover:bg-gray-100">
-          <ChevronLeft size={22} className="text-text" />
+        <button
+          type="button"
+          aria-label="Volver"
+          onClick={handleBack}
+          className="p-2 -ml-2 rounded-xl hover:bg-subtle"
+        >
+          <ChevronLeft size={22} className="text-text" aria-hidden="true" />
         </button>
         <div>
-          <p className="font-bold text-sm text-text">{stepTitles[currentStep]}</p>
+          <h1 className="font-bold text-sm text-text">{stepTitles[currentStep]}</h1>
           <p className="text-xs text-muted">{stepSubtitles[currentStep]}</p>
         </div>
       </div>
@@ -95,7 +143,7 @@ export function ExchangePage() {
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto px-4 py-5 pb-32">
+      <main id="main-content" tabIndex={-1} className="flex-1 overflow-y-auto px-4 py-5 pb-32">
         <AnimatePresence mode="wait">
           <motion.div
             key={currentStep}
@@ -115,6 +163,8 @@ export function ExchangePage() {
                   selectedId={selectedBankId}
                   onSelect={setSelectedBankId}
                   filterCurrency={isBuy ? 'PEN' : 'USD'}
+                  userBanks={user.accounts.map((a) => a.bank)}
+                  preferredBank={destinationAccount.bank}
                 />
                 <Button
                   variant="primary" fullWidth size="lg"
@@ -167,21 +217,14 @@ export function ExchangePage() {
                     <Row label="Recibirás" value={isBuy ? formatUSD(result) : formatPEN(result)} highlight />
                     <Row label="Tipo de cambio" value={`S/ ${rate.toFixed(4)}`} />
                     <Row label="Banco seleccionado" value={selectedBankId ?? '-'} />
-                    <Row label="Cuenta destino" value={user?.accounts[0]?.cci.slice(-8).padStart(20, '*') ?? '-'} />
+                    <Row label="Cuenta destino" value={destinationAccount.cci.slice(-8).padStart(20, '*')} />
                   </div>
                 </div>
 
-                <div className="bg-gradient-to-br from-crown-navy/5 to-crown-gold/10 border border-crown-gold/30 rounded-xl p-3">
-                  <p className="text-xs font-semibold text-crown-navy mb-0.5">
-                    🛡 Garantía SLA de 15 minutos
+                <div className="bg-subtle rounded-xl p-3 space-y-1.5">
+                  <p className="text-xs text-muted">
+                    Tu abono se acredita en aproximadamente 15 minutos tras validar el voucher.
                   </p>
-                  <p className="text-xs text-text/80">
-                    Si tu abono no llega en 15 min desde la validación del voucher, te
-                    compensamos automáticamente con tasa preferencial en tu siguiente cambio.
-                  </p>
-                </div>
-
-                <div className="bg-gray-50 rounded-xl p-3">
                   <p className="text-xs text-muted">
                     Al confirmar aceptas los términos de la operación y autorizas a Andean Crown a procesar el cambio de divisas.
                   </p>
@@ -197,7 +240,7 @@ export function ExchangePage() {
             )}
           </motion.div>
         </AnimatePresence>
-      </div>
+      </main>
 
       <BottomNav />
     </div>

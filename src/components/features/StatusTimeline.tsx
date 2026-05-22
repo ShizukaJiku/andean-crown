@@ -40,7 +40,7 @@ export function StatusTimeline({ events, currentStatus }: StatusTimelineProps) {
                       : isCurrent
                         ? 'bg-crown-navy text-white ring-4 ring-crown-navy/20'
                         : '',
-                  isPending && 'bg-gray-100 text-muted'
+                  isPending && 'bg-subtle text-muted'
                 )}
               >
                 {isDone

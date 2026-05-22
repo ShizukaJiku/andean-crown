@@ -1,10 +1,18 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ChevronLeft, User, Mail, Phone, Lock, Eye, EyeOff, CreditCard, Building2, CheckCircle2 } from 'lucide-react'
+import { ChevronLeft, User, Mail, Phone, Lock, Eye, EyeOff, CreditCard, CheckCircle2 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
 import { StepIndicator } from '../components/ui/StepIndicator'
+import { DocumentPhotoUpload } from '../components/features/DocumentPhotoUpload'
+import { BankAccountFields } from '../components/features/BankAccountFields'
+import {
+  emptyBankAccountDraft,
+  isBankAccountDraftValid,
+  type BankAccountDraft,
+} from '../lib/bank-account'
+import { isEmail, isDNI, isPhone, digitsOnly } from '../lib/validation'
 import { useAuthStore } from '../store/auth.store'
 
 const STEPS = ['Datos', 'DNI', 'PEP', 'Cuenta']
@@ -18,12 +26,8 @@ interface FormData {
   dni: string
   dniType: 'DNI' | 'CE' | 'Pasaporte'
   isPEP: boolean | null
-  bank: string
-  accountType: string
-  cci: string
+  account: BankAccountDraft
 }
-
-const banks = ['BCP', 'BBVA', 'Interbank', 'Scotiabank', 'Otro']
 
 export function RegisterPage() {
   const navigate = useNavigate()
@@ -33,17 +37,43 @@ export function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [form, setForm] = useState<FormData>({
     firstName: '', lastName: '', email: '', phone: '', password: '',
-    dni: '', dniType: 'DNI', isPEP: null, bank: '', accountType: 'Ahorros', cci: '',
+    dni: '', dniType: 'DNI', isPEP: null, account: emptyBankAccountDraft,
   })
 
   const update = (k: keyof FormData, v: unknown) => setForm((f) => ({ ...f, [k]: v }))
 
-  const next = () => setStep((s) => Math.min(s + 1, STEPS.length - 1))
+  // Validación por campo (inline) y por paso (habilita "Continuar")
+  const emailValid = isEmail(form.email)
+  const phoneValid = isPhone(form.phone)
+  const dniValid = form.dniType === 'DNI'
+    ? isDNI(form.dni)
+    : form.dni.trim().length >= 6
+  const stepValid =
+    step === 0
+      ? form.firstName.trim() !== '' && form.lastName.trim() !== '' &&
+        emailValid && phoneValid && form.password.length >= 8
+      : step === 1 ? dniValid
+        : step === 2 ? form.isPEP !== null
+          : step === 3 ? isBankAccountDraftValid(form.account)
+            : true
+
+  const next = () => {
+    if (!stepValid) return
+    setStep((s) => Math.min(s + 1, STEPS.length - 1))
+  }
   const prev = () => { if (step > 0) setStep((s) => s - 1); else navigate('/') }
 
   const handleFinish = async () => {
     setLoading(true)
-    await register({ firstName: form.firstName, lastName: form.lastName, email: form.email })
+    await register({
+      firstName: form.firstName,
+      lastName: form.lastName,
+      email: form.email,
+      phone: form.phone,
+      dni: form.dni,
+      isPEP: form.isPEP ?? false,
+      account: form.account,
+    })
     setLoading(false)
     navigate('/home', { replace: true })
   }
@@ -55,14 +85,19 @@ export function RegisterPage() {
   }
 
   return (
-    <div className="flex flex-col min-h-dvh bg-surface">
+    <div className="mobile-shell bg-surface">
       {/* Header */}
       <div className="flex items-center gap-3 px-4 pt-safe pt-4 pb-4 border-b border-border">
-        <button onClick={prev} className="p-2 -ml-2 rounded-xl hover:bg-gray-100">
-          <ChevronLeft size={22} className="text-text" />
+        <button
+          type="button"
+          aria-label="Volver"
+          onClick={prev}
+          className="p-2 -ml-2 rounded-xl hover:bg-subtle"
+        >
+          <ChevronLeft size={22} className="text-text" aria-hidden="true" />
         </button>
         <div>
-          <p className="font-bold text-sm text-text">Crear cuenta</p>
+          <h1 className="font-bold text-sm text-text">Crear cuenta</h1>
           <p className="text-xs text-muted">Paso {step + 1} de {STEPS.length}</p>
         </div>
       </div>
@@ -73,7 +108,7 @@ export function RegisterPage() {
       </div>
 
       {/* Step content */}
-      <div className="flex-1 px-6 pb-6 overflow-hidden">
+      <main id="main-content" tabIndex={-1} className="flex-1 px-6 pb-6 overflow-hidden">
         <AnimatePresence mode="wait">
           <motion.div
             key={step}
@@ -93,22 +128,36 @@ export function RegisterPage() {
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <Input label="Nombre" placeholder="Sofía" value={form.firstName}
+                    autoComplete="given-name"
                     onChange={(e) => update('firstName', e.target.value)} prefix={<User size={15} />} />
                   <Input label="Apellido" placeholder="Martínez" value={form.lastName}
+                    autoComplete="family-name"
                     onChange={(e) => update('lastName', e.target.value)} />
                 </div>
                 <Input label="Correo electrónico" type="email" placeholder="correo@ejemplo.com"
+                  autoComplete="email"
                   value={form.email} onChange={(e) => update('email', e.target.value)}
+                  error={form.email !== '' && !emailValid ? 'Correo electrónico no válido' : undefined}
                   prefix={<Mail size={15} />} />
                 <Input label="Celular" type="tel" placeholder="+51 987 654 321"
+                  autoComplete="tel" inputMode="tel"
                   value={form.phone} onChange={(e) => update('phone', e.target.value)}
+                  error={form.phone !== '' && !phoneValid ? 'Número de celular no válido' : undefined}
                   prefix={<Phone size={15} />} />
                 <Input label="Contraseña" type={showPassword ? 'text' : 'password'}
                   placeholder="Mínimo 8 caracteres" value={form.password}
+                  autoComplete="new-password"
                   onChange={(e) => update('password', e.target.value)}
+                  error={form.password !== '' && form.password.length < 8 ? 'Mínimo 8 caracteres' : undefined}
                   prefix={<Lock size={15} />}
                   suffix={
-                    <button onClick={() => setShowPassword(!showPassword)} tabIndex={-1}>
+                    <button
+                      type="button"
+                      aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                      onClick={() => setShowPassword(!showPassword)}
+                      tabIndex={-1}
+                      className="tap-target"
+                    >
                       {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
                     </button>
                   } />
@@ -131,6 +180,7 @@ export function RegisterPage() {
                     {(['DNI', 'CE', 'Pasaporte'] as const).map((t) => (
                       <button
                         key={t}
+                        type="button"
                         onClick={() => update('dniType', t)}
                         className={`flex-1 py-2.5 text-sm font-medium rounded-xl border-2 transition-colors
                           ${form.dniType === t ? 'border-crown-gold bg-crown-gold/5 text-crown-navy' : 'border-border text-muted'}`}
@@ -141,27 +191,15 @@ export function RegisterPage() {
                   </div>
                 </div>
                 <Input label={`Número de ${form.dniType}`} placeholder="Ej. 72345678"
-                  value={form.dni} onChange={(e) => update('dni', e.target.value)}
+                  inputMode={form.dniType === 'DNI' ? 'numeric' : 'text'}
+                  value={form.dni}
+                  onChange={(e) => update('dni', form.dniType === 'DNI' ? digitsOnly(e.target.value) : e.target.value)}
                   prefix={<CreditCard size={15} />}
+                  error={form.dni !== '' && !dniValid
+                    ? (form.dniType === 'DNI' ? 'El DNI debe tener 8 dígitos' : 'Documento no válido')
+                    : undefined}
                   hint={form.dniType === 'DNI' ? '8 dígitos' : 'Sin espacios ni guiones'} />
-                {/* Mock upload area */}
-                <div>
-                  <p className="text-sm font-medium text-text mb-2">Foto del documento (frente)</p>
-                  <div className="border-2 border-dashed border-border rounded-2xl p-6 flex flex-col items-center gap-2 bg-gray-50">
-                    <div className="w-16 h-10 bg-gray-200 rounded-lg flex items-center justify-center">
-                      <CreditCard size={20} className="text-muted" />
-                    </div>
-                    <p className="text-xs text-muted text-center">
-                      Toca para tomar foto o subir archivo
-                    </p>
-                    <button className="text-xs font-semibold text-crown-gold-dim border border-crown-gold/30 rounded-lg px-4 py-1.5">
-                      Seleccionar archivo
-                    </button>
-                  </div>
-                  <p className="text-xs text-muted mt-2 text-center">
-                    Para esta demo, omite la carga de foto
-                  </p>
-                </div>
+                <DocumentPhotoUpload />
               </>
             )}
 
@@ -191,6 +229,7 @@ export function RegisterPage() {
                   ].map(({ label, value, desc }) => (
                     <button
                       key={String(value)}
+                      type="button"
                       onClick={() => update('isPEP', value)}
                       className={`text-left p-4 rounded-2xl border-2 transition-all
                         ${form.isPEP === value ? 'border-crown-gold bg-crown-gold/5' : 'border-border'}`}
@@ -227,40 +266,10 @@ export function RegisterPage() {
                     Registra la cuenta donde recibirás tus abonos
                   </p>
                 </div>
-                <div>
-                  <p className="text-sm font-medium text-text mb-2">Banco</p>
-                  <div className="grid grid-cols-3 gap-2">
-                    {banks.map((b) => (
-                      <button
-                        key={b}
-                        onClick={() => update('bank', b)}
-                        className={`py-3 text-sm font-medium rounded-xl border-2 transition-colors
-                          ${form.bank === b ? 'border-crown-gold bg-crown-gold/5 text-crown-navy' : 'border-border text-muted'}`}
-                      >
-                        {b}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-text mb-2">Tipo de cuenta</p>
-                  <div className="flex gap-2">
-                    {['Ahorros', 'Corriente'].map((t) => (
-                      <button
-                        key={t}
-                        onClick={() => update('accountType', t)}
-                        className={`flex-1 py-2.5 text-sm font-medium rounded-xl border-2 transition-colors
-                          ${form.accountType === t ? 'border-crown-gold bg-crown-gold/5 text-crown-navy' : 'border-border text-muted'}`}
-                      >
-                        {t}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <Input label="CCI (Código de Cuenta Interbancario)" placeholder="20 dígitos"
-                  value={form.cci} onChange={(e) => update('cci', e.target.value)}
-                  prefix={<Building2 size={15} />}
-                  hint="El CCI tiene 20 dígitos y está en tu app o estado de cuenta" />
+                <BankAccountFields
+                  value={form.account}
+                  onChange={(account) => update('account', account)}
+                />
                 <div className="bg-success-bg rounded-xl p-3 flex items-start gap-2">
                   <CheckCircle2 size={16} className="text-success mt-0.5 shrink-0" />
                   <p className="text-xs text-success">
@@ -271,23 +280,23 @@ export function RegisterPage() {
             )}
           </motion.div>
         </AnimatePresence>
-      </div>
+      </main>
 
       {/* Footer CTA */}
       <div className="px-6 pb-8 pt-4 border-t border-border">
         {step < STEPS.length - 1 ? (
-          <Button variant="primary" fullWidth size="lg" onClick={next}>
+          <Button variant="primary" fullWidth size="lg" disabled={!stepValid} onClick={next}>
             Continuar
           </Button>
         ) : (
-          <Button variant="primary" fullWidth size="lg" loading={loading} onClick={handleFinish}>
+          <Button variant="primary" fullWidth size="lg" loading={loading} disabled={!stepValid} onClick={handleFinish}>
             Crear mi cuenta
           </Button>
         )}
         {step === 0 && (
           <p className="text-center text-sm text-muted mt-4">
             ¿Ya tienes cuenta?{' '}
-            <button onClick={() => navigate('/login')} className="text-crown-gold-dim font-semibold">
+            <button type="button" onClick={() => navigate('/login')} className="text-crown-gold-dim font-semibold">
               Iniciar sesión
             </button>
           </p>

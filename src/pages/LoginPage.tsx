@@ -5,6 +5,7 @@ import { motion } from 'framer-motion'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
 import { useAuthStore } from '../store/auth.store'
+import { isEmail } from '../lib/validation'
 
 type LoginStep = 'credentials' | 'otp'
 
@@ -21,6 +22,7 @@ export function LoginPage() {
 
   const handleCredentials = async () => {
     if (!email || !password) { setError('Completa todos los campos'); return }
+    if (!isEmail(email)) { setError('Ingresa un correo electrónico válido'); return }
     setError('')
     setLoading(true)
     await new Promise((r) => setTimeout(r, 800))
@@ -56,11 +58,16 @@ export function LoginPage() {
   }
 
   return (
-    <div className="flex flex-col min-h-dvh bg-surface">
+    <div className="mobile-shell bg-surface">
       {/* Header */}
       <div className="flex items-center px-4 pt-safe pt-4 pb-2">
-        <button onClick={() => step === 'otp' ? setStep('credentials') : navigate('/')} className="p-2 -ml-2 rounded-xl hover:bg-gray-100">
-          <ChevronLeft size={22} className="text-text" />
+        <button
+          type="button"
+          aria-label="Volver"
+          onClick={() => step === 'otp' ? setStep('credentials') : navigate('/')}
+          className="p-2 -ml-2 rounded-xl hover:bg-subtle"
+        >
+          <ChevronLeft size={22} className="text-text" aria-hidden="true" />
         </button>
       </div>
 
@@ -75,7 +82,7 @@ export function LoginPage() {
         </div>
       </div>
 
-      <div className="px-6 flex-1">
+      <main id="main-content" tabIndex={-1} className="px-6 flex-1">
         {step === 'credentials' ? (
           <motion.div
             key="credentials"
@@ -84,7 +91,7 @@ export function LoginPage() {
             className="flex flex-col gap-6"
           >
             <div>
-              <h2 className="text-2xl font-bold text-text">Iniciar sesión</h2>
+              <h1 className="text-2xl font-bold text-text">Iniciar sesión</h1>
               <p className="text-sm text-muted mt-1">Ingresa con tu correo y contraseña</p>
             </div>
 
@@ -106,7 +113,13 @@ export function LoginPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 prefix={<Lock size={16} />}
                 suffix={
-                  <button onClick={() => setShowPassword(!showPassword)} tabIndex={-1}>
+                  <button
+                    type="button"
+                    aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                    onClick={() => setShowPassword(!showPassword)}
+                    tabIndex={-1}
+                    className="tap-target"
+                  >
                     {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
                 }
@@ -114,9 +127,12 @@ export function LoginPage() {
               />
             </div>
 
-            {error && <p className="text-sm text-error bg-error-bg rounded-xl px-4 py-3">{error}</p>}
+            {error && <p role="alert" className="text-sm text-error bg-error-bg rounded-xl px-4 py-3">{error}</p>}
 
-            <button className="text-sm text-crown-gold-dim font-medium text-right -mt-2">
+            <button
+              type="button"
+              className="text-sm text-crown-gold-dim font-medium text-right -mt-2 min-h-[44px] self-end"
+            >
               ¿Olvidaste tu contraseña?
             </button>
 
@@ -133,7 +149,7 @@ export function LoginPage() {
 
             <p className="text-center text-sm text-muted pb-6">
               ¿No tienes cuenta?{' '}
-              <button onClick={() => navigate('/register')} className="text-crown-gold-dim font-semibold">
+              <button type="button" onClick={() => navigate('/register')} className="text-crown-gold-dim font-semibold">
                 Regístrate
               </button>
             </p>
@@ -146,7 +162,7 @@ export function LoginPage() {
             className="flex flex-col gap-6"
           >
             <div>
-              <h2 className="text-2xl font-bold text-text">Verificación</h2>
+              <h1 className="text-2xl font-bold text-text">Verificación</h1>
               <p className="text-sm text-muted mt-1">
                 Ingresa el código enviado a{' '}
                 <span className="text-text font-medium">{email}</span>
@@ -167,6 +183,7 @@ export function LoginPage() {
                   id={`otp-${idx}`}
                   type="text"
                   inputMode="numeric"
+                  aria-label={`Dígito ${idx + 1} de 6`}
                   maxLength={1}
                   value={digit}
                   onChange={(e) => handleOtpChange(idx, e.target.value)}
@@ -177,7 +194,7 @@ export function LoginPage() {
               ))}
             </div>
 
-            {error && <p className="text-sm text-error bg-error-bg rounded-xl px-4 py-3">{error}</p>}
+            {error && <p role="alert" className="text-sm text-error bg-error-bg rounded-xl px-4 py-3">{error}</p>}
 
             <Button variant="primary" fullWidth size="lg" loading={loading} onClick={handleOtp}>
               Verificar e ingresar
@@ -185,11 +202,11 @@ export function LoginPage() {
 
             <p className="text-center text-sm text-muted">
               ¿No recibiste el código?{' '}
-              <button className="text-crown-gold-dim font-semibold">Reenviar</button>
+              <button type="button" className="text-crown-gold-dim font-semibold">Reenviar</button>
             </p>
           </motion.div>
         )}
-      </div>
+      </main>
     </div>
   )
 }

@@ -3,13 +3,13 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { CheckCircle2, Clock, Home, Eye } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { Button } from '../components/ui/Button'
-import { useOperationsStore } from '../store/operations.store'
+import { useUserOperations } from '../store/operations.store'
 import { formatUSD, formatPEN } from '../lib/format'
 
 export function StatusPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const { operations } = useOperationsStore()
+  const operations = useUserOperations()
   const op = operations.find((o) => o.id === id)
   const [countdown, setCountdown] = useState(15 * 60) // 15 min in seconds
 
@@ -28,7 +28,8 @@ export function StatusPage() {
   return (
     <div className="mobile-shell flex flex-col">
       {/* Success animation */}
-      <div className="bg-gradient-to-br from-crown-navy via-crown-deep to-[#1a3a2a] flex-1 flex flex-col items-center justify-center px-6 py-12 text-center">
+      <main id="main-content" tabIndex={-1} className="bg-gradient-to-br from-crown-navy via-crown-deep to-[#1a3a2a] flex-1 flex flex-col items-center justify-center px-6 py-12 text-center">
+        <h1 className="sr-only">Solicitud recibida</h1>
         <motion.div
           initial={{ scale: 0, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
@@ -49,7 +50,7 @@ export function StatusPage() {
           <p className="text-3xl font-bold text-crown-gold-light">
             {isBuy ? formatUSD(op.amountReceived) : formatPEN(op.amountReceived)}
           </p>
-          <p className="text-white/50 text-sm mt-1">
+          <p className="text-white/70 text-sm mt-1">
             {isBuy ? 'Dólares en camino a tu cuenta' : 'Soles en camino a tu cuenta'}
           </p>
         </motion.div>
@@ -85,10 +86,10 @@ export function StatusPage() {
           transition={{ delay: 0.7 }}
           className="mt-6 text-center"
         >
-          <p className="text-xs text-white/30">N° de operación</p>
+          <p className="text-xs text-white/70">N° de operación</p>
           <p className="text-sm font-mono text-white/60 mt-0.5">{op.number}</p>
         </motion.div>
-      </div>
+      </main>
 
       {/* What's next */}
       <div className="bg-surface px-5 pt-6 pb-10">
@@ -100,7 +101,7 @@ export function StatusPage() {
             { icon: '📱', title: 'Te notificamos', desc: 'Recibirás una notificación al completarse' },
           ].map((step, idx) => (
             <div key={idx} className="flex items-start gap-3">
-              <div className="w-9 h-9 bg-gray-100 rounded-xl flex items-center justify-center text-base shrink-0">
+              <div className="w-9 h-9 bg-subtle rounded-xl flex items-center justify-center text-base shrink-0">
                 {step.icon}
               </div>
               <div>
